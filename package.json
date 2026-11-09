@@ -1,0 +1,24 @@
+{
+  "name": "pocket-ledger",
+  "version": "2.17.0",
+  "description": "小账本 - 本地优先的记账应用：一句话/一张图由 AI 拆成账目，六套皮肤，预算与统计",
+  "private": true,
+  "scripts": {
+    "serve": "node serve.js",
+    "build:web": "node build.js",
+    "icons": "node gen-icons.js",
+    "sync": "node build.js && npx cap sync",
+    "apk": "node build.js && npx cap sync android && cd android && gradlew.bat assembleDebug && cd .. && node release.js",
+    "test": "node test.mjs && node ai-test.mjs"
+  },
+  "keywords": ["记账", "ledger", "pwa", "capacitor", "indexeddb", "offline-first"],
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/cli": "^7.6.10",
+    "@capacitor/core": "^7.6.10"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.11.1"
+  }
+}

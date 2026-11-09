@@ -1,0 +1,15 @@
+# 统一换行符：仓库里一律存 LF。
+# 不这么写的话，Windows 上 clone 出来的 gradlew 会变成 CRLF，
+# 到 macOS / Linux 上执行会报 bad interpreter。
+* text=auto eol=lf
+
+# Windows 批处理必须 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制，别做任何转换
+*.jar binary
+*.png binary
+*.webp binary
+*.apk binary
+*.keystore binary

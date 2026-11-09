@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>小账本 · 五套 UI 设计方案</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#EDEBE6;color:#1B1B19;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .lab{max-width:1280px;margin:0 auto;padding:56px 28px 90px}
+  .head{max-width:720px;margin-bottom:44px}
+  .head h1{font-size:30px;font-weight:600;letter-spacing:-.6px;margin:0 0 12px}
+  .head p{margin:0;font-size:14.5px;line-height:1.75;color:#5E5C56}
+  .head .tag{display:inline-block;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:#8A867C;margin-bottom:14px}
+  .head .shipped{display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+    font-size:12.5px;color:#0F6E56;background:#E1F5EE;border:1px solid #BFE3D6;
+    padding:5px 11px;border-radius:20px}
+  .head .shipped b{font-weight:600}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:34px 26px}
+
+  .case{display:flex;flex-direction:column;gap:16px}
+  .info{padding:0 4px}
+  .info .num{font-size:11.5px;letter-spacing:.16em;color:#9C978B;font-variant-numeric:tabular-nums}
+  .info h2{font-size:19px;font-weight:600;margin:5px 0 3px;letter-spacing:.5px}
+  .info .en{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#A8A399}
+  .info ul{margin:12px 0 0;padding-left:0;list-style:none}
+  .info li{font-size:13px;line-height:1.7;color:#56534C;padding-left:14px;position:relative}
+  .info li::before{content:"";position:absolute;left:0;top:9px;width:4px;height:4px;
+    border-radius:50%;background:#B9B4A8}
+  .info .cost{margin-top:12px;font-size:12px;color:#8A867C;border-top:1px solid #DCD8CF;padding-top:10px}
+  .info .cost b{color:#3A3833;font-weight:600}
+
+  /* 手机外框 */
+  .phone{width:100%;max-width:352px;margin:0 auto;background:#0E0E0D;border-radius:38px;padding:9px;
+    box-shadow:0 1px 2px rgba(0,0,0,.14),0 18px 40px -12px rgba(20,18,14,.35)}
+  .scr{position:relative;height:726px;border-radius:30px;overflow:hidden;display:flex;flex-direction:column}
+
+  /* ---------- 共用骨架 ---------- */
+  .scr .top{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 8px;flex:none}
+  .scr .month{display:inline-flex;align-items:center;gap:5px;font-size:12.5px}
+  .scr .hero{padding:6px 20px 16px;flex:none}
+  .scr .lbl{font-size:11.5px;letter-spacing:.06em}
+  .scr .amt{font-variant-numeric:tabular-nums;line-height:1.05;margin-top:4px;overflow-wrap:anywhere}
+  .scr .sub{font-size:11.5px;margin-top:9px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .scr .ai{display:flex;align-items:center;gap:8px;margin:0 16px 16px;padding:10px 12px;flex:none}
+  .scr .ai span{flex:1;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .scr .ai b{font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px}
+  .scr .sec{display:flex;justify-content:space-between;align-items:baseline;
+    padding:0 20px 8px;flex:none}
+  .scr .sec h3{margin:0;font-size:13px;font-weight:600;letter-spacing:.3px}
+  .scr .sec a{font-size:11.5px;text-decoration:none}
+  .scr .rows{list-style:none;margin:0;padding:0 16px;flex:1;overflow:hidden}
+  .scr .rows li{display:flex;align-items:center;gap:11px;padding:11px 4px}
+  .scr .rows i{width:32px;height:32px;flex:none;display:grid;place-items:center;
+    font-size:12.5px;font-style:normal}
+  .scr .rows .t{flex:1;min-width:0}
+  .scr .rows .t b{display:block;font-size:13.5px;font-weight:500}
+  .scr .rows .t em{display:block;font-size:11px;font-style:normal;margin-top:1px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .scr .rows s{text-decoration:none;font-size:13.5px;font-variant-numeric:tabular-nums;flex:none}
+  .scr .tabs{display:flex;flex:none;padding:10px 6px 12px}
+  .scr .tabs div{flex:1;text-align:center;font-size:10.5px;letter-spacing:.04em}
+  .scr .tabs div.on{font-weight:600}
+  .scr .tabs .ic{display:flex;align-items:center;justify-content:center;height:20px;
+    margin-bottom:4px;opacity:.5}
+  .scr .tabs div.on .ic{opacity:1}
+
+  /* ========== 1 墨韵 ========== */
+  .s-ink{background:#FBFAF7;color:#1A1A18;
+    font-family:"Songti SC","Noto Serif SC",SimSun,"PingFang SC",serif}
+  .s-ink .top{border-bottom:1px solid #E6E1D4;padding-bottom:12px;margin:0 20px;padding-left:0;padding-right:0}
+  .s-ink .month{color:#8B8880;letter-spacing:.04em}
+  .s-ink .hero{padding-top:20px}
+  .s-ink .lbl{color:#9A958A;letter-spacing:.2em;font-family:-apple-system,"PingFang SC",sans-serif;font-size:10.5px}
+  .s-ink .amt{font-size:44px;font-weight:400;letter-spacing:-1.6px;color:#1A1A18}
+  .s-ink .sub{color:#8B8880;font-family:-apple-system,"PingFang SC",sans-serif;font-size:11px;letter-spacing:.02em}
+  .s-ink .sub i{font-style:normal;color:#C9C3B4}
+  .s-ink .ai{margin-top:4px;background:transparent;border:1px solid #DCD6C7;border-radius:2px;color:#7E7A70}
+  .s-ink .ai b{background:#1A1A18;color:#FBFAF7;border-radius:2px;font-family:-apple-system,"PingFang SC",sans-serif;font-weight:500}
+  .s-ink .sec{border-top:1px solid #E6E1D4;margin:6px 20px 0;padding:14px 0 6px}
+  .s-ink .sec h3{font-size:12px;letter-spacing:.2em;color:#6E6A60;font-weight:400}
+  .s-ink .sec a{color:#9A958A}
+  .s-ink .rows{padding:0 20px}
+  .s-ink .rows li{padding:12px 0;border-bottom:1px solid #EDE8DC;gap:12px}
+  .s-ink .rows i{width:26px;height:26px;border:1px solid #C9C3B4;border-radius:50%;
+    font-size:11px;color:#6E6A60;font-family:-apple-system,"PingFang SC",sans-serif}
+  .s-ink .rows .t b{font-weight:400;font-size:13.5px;letter-spacing:.04em}
+  .s-ink .rows .t em{color:#A8A399;font-size:10.5px}
+  .s-ink .rows s{color:#41403B;letter-spacing:-.2px}
+  .s-ink .rows li.in s{color:#B33A2B}
+  .s-ink .tabs{border-top:1px solid #E6E1D4;color:#A8A399;
+    font-family:-apple-system,"PingFang SC",sans-serif;padding-top:12px}
+  .s-ink .tabs div{letter-spacing:.12em;font-size:10.5px}
+  .s-ink .tabs svg{stroke-width:1.15}
+  .s-ink .tabs div.on{color:#1A1A18}
+  .s-ink .tabs div.on::after{content:"";display:block;width:13px;height:1px;
+    background:#B33A2B;margin:5px auto 0}
+
+  /* ========== 2 幽光 ========== */
+  .s-aurora{background:#0A0D13;color:#EEF2F7;position:relative;
+    font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif}
+  .s-aurora::before{content:"";position:absolute;inset:-40% -20% auto -20%;height:120%;
+    background:
+      radial-gradient(38% 40% at 22% 16%,rgba(124,92,255,.55),transparent 70%),
+      radial-gradient(34% 36% at 78% 28%,rgba(43,217,196,.42),transparent 70%),
+      radial-gradient(30% 30% at 55% 4%,rgba(255,107,157,.34),transparent 70%);
+    filter:blur(28px);pointer-events:none}
+  .s-aurora .top,.s-aurora .hero,.s-aurora .ai,.s-aurora .sec,.s-aurora .rows,.s-aurora .tabs{position:relative}
+  .s-aurora .month{color:rgba(255,255,255,.62);background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.12);padding:5px 11px;border-radius:20px;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .s-aurora .hero{padding-top:12px}
+  .s-aurora .lbl{color:rgba(255,255,255,.5);font-size:11px;letter-spacing:.14em}
+  .s-aurora .amt{font-size:45px;font-weight:250;letter-spacing:-2px;
+    text-shadow:0 0 34px rgba(150,140,255,.4)}
+  .s-aurora .sub{color:rgba(255,255,255,.44)}
+  .s-aurora .sub i{font-style:normal;color:rgba(255,255,255,.2)}
+  .s-aurora .ai{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);
+    border-radius:16px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    color:rgba(255,255,255,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.09)}
+  .s-aurora .ai b{background:linear-gradient(135deg,#8B7BFF,#35E0C5);color:#0A0D13}
+  .s-aurora .sec h3{color:rgba(255,255,255,.8);font-size:12px;letter-spacing:.1em;font-weight:500}
+  .s-aurora .sec a{color:rgba(255,255,255,.4)}
+  .s-aurora .rows{padding:0 14px}
+  .s-aurora .rows li{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;padding:10px 12px;margin-bottom:7px;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .s-aurora .rows i{border-radius:10px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.72);
+    font-size:11.5px}
+  .s-aurora .rows .t b{font-weight:450;font-size:13px}
+  .s-aurora .rows .t em{color:rgba(255,255,255,.34);font-size:10.5px}
+  .s-aurora .rows s{color:#7FE9D4;font-weight:400}
+  .s-aurora .rows li.ex s{color:#FF8FB4}
+  .s-aurora .tabs{color:rgba(255,255,255,.34);border-top:1px solid rgba(255,255,255,.07);
+    background:rgba(10,13,19,.6)}
+  .s-aurora .tabs svg{stroke-width:1.5}
+  .s-aurora .tabs div.on{color:#9E90FF;text-shadow:0 0 18px rgba(158,144,255,.7)}
+  .s-aurora .tabs div.on .ic{filter:drop-shadow(0 0 8px rgba(158,144,255,.8))}
+
+  /* ========== 3 纸糖 ========== */
+  .s-pop{background:#FFF7EC;color:#17130F;
+    font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif}
+  .s-pop .top{padding-bottom:2px}
+  .s-pop .month{background:#fff;border:2px solid #17130F;border-radius:999px;
+    padding:4px 11px;font-weight:700;font-size:12px;box-shadow:2px 2px 0 #17130F}
+  .s-pop .lbl{font-weight:700;font-size:11.5px;letter-spacing:.02em;color:#5B5245}
+  .s-pop .amt{font-size:42px;font-weight:800;letter-spacing:-1.8px}
+  .s-pop .sub{font-weight:600;color:#6B6152;font-size:11px}
+  .s-pop .sub i{font-style:normal;color:#C4B8A4}
+  .s-pop .ai{background:#fff;border:2px solid #17130F;border-radius:14px;
+    box-shadow:3px 3px 0 #17130F;font-weight:600}
+  .s-pop .ai b{background:#FFD84D;border:2px solid #17130F;border-radius:10px;color:#17130F;
+    box-shadow:1.5px 1.5px 0 #17130F;font-weight:800;padding:5px 10px}
+  .s-pop .sec h3{font-size:13px;font-weight:800;letter-spacing:.02em}
+  .s-pop .sec a{color:#8A7C66;font-weight:700}
+  .s-pop .rows{padding:0 14px}
+  .s-pop .rows li{background:#fff;border:2px solid #17130F;border-radius:14px;
+    padding:9px 11px;margin-bottom:7px;box-shadow:2.5px 2.5px 0 #17130F}
+  .s-pop .rows i{border:2px solid #17130F;border-radius:10px;font-weight:800;font-size:12px}
+  .s-pop .rows li:nth-child(1) i{background:#A8E6A1}
+  .s-pop .rows li:nth-child(2) i{background:#FF9EC4}
+  .s-pop .rows li:nth-child(3) i{background:#8FD3FF}
+  .s-pop .rows li:nth-child(4) i{background:#FFD84D}
+  .s-pop .rows li:nth-child(5) i{background:#C9B8FF}
+  .s-pop .rows li:nth-child(6) i{background:#FFB27A}
+  .s-pop .top .month:last-child{background:transparent;border:none;box-shadow:none;
+    color:#A2937B;font-weight:700;font-size:12px;padding:0}
+  .s-pop .rows .t b{font-weight:800;font-size:13px}
+  .s-pop .rows .t em{color:#9B8E79;font-size:10.5px;font-weight:600}
+  .s-pop .rows s{font-weight:800}
+  .s-pop .rows li.in s{color:#0F8A5F}
+  .s-pop .tabs{color:#A2937B;font-weight:700;border-top:2px solid #17130F;padding-top:9px}
+  .s-pop .tabs svg{stroke-width:2.5}
+  .s-pop .tabs div.on{color:#17130F}
+  .s-pop .tabs div.on .ic{height:auto;width:fit-content;background:#FFD84D;border:2px solid #17130F;
+    border-radius:8px;padding:3px 9px;box-shadow:1.5px 1.5px 0 #17130F;margin:0 auto 5px}
+
+  /* ========== 4 仪表 ========== */
+  .s-term{background:#070B11;color:#C8D4E2;position:relative;
+    font-family:"JetBrains Mono","Cascadia Code",Consolas,ui-monospace,monospace}
+  .s-term::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(70,110,150,.07) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(70,110,150,.07) 1px,transparent 1px);
+    background-size:22px 22px}
+  .s-term .top,.s-term .hero,.s-term .ai,.s-term .sec,.s-term .rows,.s-term .tabs{position:relative}
+  .s-term .top{padding:12px 18px 0}
+  .s-term .month{color:#5B7492;font-size:11px;letter-spacing:.1em}
+  .s-term .top .live{font-size:9.5px;letter-spacing:.16em;color:#3DF5A5}
+  .s-term .top .live::before{content:"●";margin-right:4px;animation:bl 2s infinite}
+  @keyframes bl{50%{opacity:.25}}
+  .s-term .hero{padding:10px 18px 14px}
+  .s-term .lbl{color:#54708E;font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+  .s-term .amt{font-size:39px;font-weight:600;letter-spacing:-1.5px;color:#3DF5A5;
+    text-shadow:0 0 22px rgba(61,245,165,.28)}
+  .s-term .sub{color:#54708E;font-size:10.5px;gap:10px}
+  .s-term .sub b{color:#9FB6CC;font-weight:500}
+  .s-term .ai{margin:0 18px 12px;background:#0D131C;border:1px solid #1B2735;border-radius:3px;
+    color:#54708E;font-size:11.5px;padding:9px 10px}
+  .s-term .ai b{background:#132033;border:1px solid #24405E;color:#3DF5A5;border-radius:2px;
+    font-size:10.5px;letter-spacing:.08em;padding:5px 9px}
+  .s-term .sec{padding:0 18px 6px;border-bottom:1px solid #16202D;margin-bottom:2px}
+  .s-term .sec h3{font-size:10.5px;letter-spacing:.16em;color:#54708E;font-weight:500;text-transform:uppercase}
+  .s-term .sec a{color:#3A5570;font-size:10px;letter-spacing:.1em}
+  .s-term .rows{padding:0 18px}
+  .s-term .rows li{padding:12px 0;border-bottom:1px solid #101A25;gap:9px}
+  .s-term .rows i{width:22px;height:22px;border:1px solid #22303F;border-radius:2px;
+    font-size:10px;color:#5B7492}
+  .s-term .rows .t b{font-weight:500;font-size:12px;color:#B6C6D8;letter-spacing:.02em}
+  .s-term .rows .t em{color:#40566C;font-size:9.5px;letter-spacing:.04em}
+  .s-term .rows s{font-size:12px;color:#FF8A3D}
+  .s-term .rows li.in s{color:#3DF5A5}
+  .s-term .tabs{color:#3A5570;font-size:9.5px;letter-spacing:.12em;border-top:1px solid #16202D;
+    padding-top:10px}
+  .s-term .tabs svg{stroke-width:1.7;stroke-linecap:butt;stroke-linejoin:miter}
+  .s-term .tabs div.on{color:#3DF5A5;text-shadow:0 0 14px rgba(61,245,165,.5)}
+  .s-term .tabs div.on .ic{opacity:1}
+  .s-term .tabs div.on::after{content:"";display:block;height:2px;background:#3DF5A5;
+    box-shadow:0 0 8px rgba(61,245,165,.9);margin:5px 9px 0}
+
+  /* ========== 5 青瓷 ========== */
+  .s-cel{background:#F4F1E8;color:#2C2A26;position:relative;
+    font-family:"Songti SC","Noto Serif SC",SimSun,"PingFang SC",serif}
+  .s-cel .top{padding:14px 20px 4px}
+  .s-cel .month{color:#7C8A76;font-size:12px;letter-spacing:.05em}
+  .s-cel .hero{padding:8px 20px 14px}
+  .s-cel .lbl{color:#8E8878;font-size:10.5px;letter-spacing:.24em}
+  .s-cel .amt{font-size:41px;font-weight:400;letter-spacing:-1.2px;color:#2C2A26}
+  .s-cel .sub{color:#8E8878;font-size:11px;gap:9px}
+  .s-cel .sub i{font-style:normal;color:#C6BFAC}
+  .s-cel .ai{margin:2px 16px 14px;background:#FBF9F3;border:1px solid #E0DAC8;border-radius:10px;
+    color:#9B9282;box-shadow:0 1px 2px rgba(90,80,60,.05)}
+  .s-cel .ai b{background:#6E8B6B;color:#FBF9F3;border-radius:7px;font-family:-apple-system,"PingFang SC",sans-serif;
+    font-weight:500;letter-spacing:.04em}
+  .s-cel .sec{padding:0 20px 6px}
+  .s-cel .sec h3{font-size:12.5px;letter-spacing:.2em;color:#6E6A5E;font-weight:400}
+  .s-cel .sec a{color:#9B9282}
+  .s-cel .rows{padding:0 14px}
+  .s-cel .rows li{background:#FBF9F3;border:1px solid #E9E3D2;border-radius:10px;
+    padding:9px 12px;margin-bottom:6px}
+  .s-cel .rows i{width:26px;height:26px;border-radius:4px;background:#C25B4A;color:#FBF9F3;
+    font-size:11px;font-family:-apple-system,"PingFang SC",sans-serif;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+  .s-cel .rows li.g i,.s-cel .rows li.in i{background:#6E8B6B}
+  .s-cel .rows li.g s,.s-cel .rows li.in s{color:#6E8B6B}
+  .s-cel .rows .t b{font-weight:400;font-size:13px;letter-spacing:.06em}
+  .s-cel .rows .t em{color:#A69C88;font-size:10.5px;font-family:-apple-system,"PingFang SC",sans-serif}
+  .s-cel .rows s{color:#5C574C}
+  .s-cel .rows li.g s{color:#6E8B6B}
+  .s-cel .tabs{color:#A69C88;border-top:1px solid #E4DDCB;letter-spacing:.12em;padding-top:11px}
+  .s-cel .tabs svg{stroke-width:1.3}
+  .s-cel .tabs div.on{color:#C25B4A}
+  .s-cel .tabs div.on::after{content:"";display:block;width:4px;height:4px;border-radius:50%;
+    background:#C25B4A;margin:4px auto 0}
+
+  footer{margin-top:60px;padding-top:26px;border-top:1px solid #DCD8CF;
+    font-size:13px;line-height:1.9;color:#56534C;max-width:760px}
+  footer b{color:#1B1B19}
+
+  /* 第 6 格：怎么选 */
+  .pick{border:1px dashed #C3BEB0;border-radius:14px;padding:34px 22px;
+    background:rgba(255,255,255,.5);display:flex;flex-direction:column;
+    justify-content:center;gap:30px;align-self:stretch}
+  .pick .phead{margin:0}
+  .pick h3{margin:0 0 4px;font-size:16px;font-weight:600;letter-spacing:.02em}
+  .pick .sub{font-size:11px;color:#9C978B;letter-spacing:.12em;text-transform:uppercase}
+  .sw{display:flex;align-items:center;gap:9px;padding:13px 0;border-bottom:1px solid #E6E2D8}
+  .sw:first-of-type{border-top:1px solid #E6E2D8}
+  .sw span{font-size:12.5px;color:#3A3833;width:62px;flex:none;letter-spacing:.02em}
+  .sw i{width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,0,0,.14);flex:none}
+  .pick dl{margin:0;font-size:12.5px;line-height:1.55}
+  .pick dl div{display:flex;gap:8px;padding:7px 0}
+  .pick dt{color:#8A867C;flex:none;width:56px}
+  .pick dd{margin:0;color:#2E2C28}
+  .pick .go{padding-top:14px;font-size:12px;color:#5E5C56;line-height:1.7;
+    border-top:1px solid #DCD8CF}
+  .pick .note{font-size:12px;color:#8A867C;line-height:1.75;
+    border-top:1px solid #E6E2D8;padding-top:14px}
+  .pick .note b{color:#3A3833;font-weight:600}
+
+  .pick .go code{background:#1B1B19;color:#EDEBE6;padding:1px 4px;border-radius:4px;
+    font-size:11px;font-family:ui-monospace,Consolas,monospace}
+  @media (max-width:720px){
+    .lab{padding:32px 18px 60px}
+    .head h1{font-size:23px}
+    .scr{height:620px}
+  }
+</style>
+</head>
+<body>
+<div class="lab">
+  <div class="head">
+    <div class="tag">Pocket Ledger · UI Direction</div>
+    <h1>五套界面方案</h1>
+    <p>同一份数据（11 月 · 支出 ¥3,407.50 · 6 笔流水），五种截然不同的审美取向。都能落地到现有代码，只换样式层，不动逻辑。</p>
+    <div class="shipped">✓ <b>已全部实装</b>：设置 → 外观，点一下即换，会记住 · 另附原版「标准绿」</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    <b>我的推荐：方案 1「墨韵」</b> 作为主界面。理由是它把"记账"从工具变成了像手账一样的东西——衬线数字、细线分隔、几乎没有色块，信息密度没降但呼吸感强了很多，而且浅色长时间看不累。唯一代价是数字的衬线字体在安卓上要靠系统宋体兜底，我会内嵌一个 60KB 的字重子集来保证一致。<br>
+    如果你更想要"打开就有质感"的冲击力，选方案 2「幽光」；想要亲和力选 3「纸糖」；想突出理财/数据感选 4「仪表」；偏好东方气质选 5「青瓷」。
+  </footer>
+</div>
+
+<script>
+const ROWS = [
+  { ic:'工', name:'工资', note:'支付宝 · 10月工资', val:'+9,000.00', cls:'in' },
+  { ic:'娱', name:'娱乐', note:'支付宝 · 电影票',   val:'-45.00' },
+  { ic:'居', name:'居住', note:'支付宝 · 房租',     val:'-3,200.00' },
+  { ic:'购', name:'购物', note:'支付宝 · 洗发水',   val:'-128.00' },
+  { ic:'交', name:'交通', note:'支付宝 · 地铁',     val:'-6.00' },
+  { ic:'餐', name:'餐饮', note:'支付宝 · 午饭',     val:'-28.50' }
+];
+
+const CASES = [
+  { key:'ink', num:'01', name:'墨韵', en:'Editorial Ink',
+    points:['纸白底 + 墨黑字，零阴影零色块，全靠细线与留白分层','数字换衬线体，字号拉到 44px，成为画面唯一主角','分类图标退成细线圆圈，只留单字，安静不抢戏'],
+    cost:'改动成本 <b>低</b>：纯 CSS + 一个字体子集',
+    extra:'<i>·</i>' },
+  { key:'aurora', num:'02', name:'幽光', en:'Aurora Glass',
+    points:['深色底 + 三团弥散光晕，手机屏上像有光源','卡片用半透明玻璃 + 内高光描边，层次靠透明度','金额数字用极细字重 250，配光晕阴影'],
+    cost:'改动成本 <b>中</b>：大量 backdrop-filter，低端机需降级为纯色',
+    extra:'' },
+  { key:'pop', num:'03', name:'纸糖', en:'Soft Pop',
+    points:['奶油底 + 2px 黑描边 + 硬投影，贴纸/手账质感','分类图标变成彩色小方糖，一个字就认得出来','数字用 800 字重，直观、有劲儿、不端着'],
+    cost:'改动成本 <b>低</b>：纯 CSS，无外部依赖',
+    extra:'' },
+  { key:'term', num:'04', name:'仪表', en:'Data Terminal',
+    points:['等宽字体 + 网格底纹，像在看行情终端','支出橙 / 收入荧光绿，涨跌一眼分清','顶部加 LIVE 呼吸点，强化"数据在跑"的感觉'],
+    cost:'改动成本 <b>低</b>：等宽字体系统自带',
+    extra:'' },
+  { key:'cel', num:'05', name:'青瓷', en:'Celadon',
+    points:['宣纸底 + 竹青/朱砂，颜色全部取自瓷器釉色','卡片是极浅的米白块，靠色温差而不是阴影分开','分类用朱砂印章方块，标题保留宋体的横细竖粗'],
+    cost:'改动成本 <b>低</b>：纯 CSS + 宋体兜底',
+    extra:'' }
+];
+
+const rowsHTML = ROWS.map(r => `
+  <li class="${r.cls||''}">
+    <i>${r.ic}</i>
+    <div class="t"><b>${r.name}</b><em>${r.note}</em></div>
+    <s>${r.val}</s>
+  </li>`).join('');
+
+// 底部导航图标：同一套几何骨架，线宽/端点交给各方案 CSS 覆盖，做到"同构不同性格"
+const ICON = {
+  home:  '<path d="M3.6 10.6 12 3.6l8.4 7"/><path d="M6 9.5V20h12V9.5"/>',
+  list:  '<path d="M4 7h16M4 12h16M4 17h10"/>',
+  chart: '<path d="M4 20v-8M10 20V5M16 20v-5M22 20H2"/>',
+  gear:  '<circle cx="12" cy="12" r="3.1"/><path d="M12 2.8v2.8M12 18.4v2.8M21.2 12h-2.8M5.6 12H2.8M18.5 5.5l-2 2M7.5 16.5l-2 2M18.5 18.5l-2-2M7.5 7.5l-2-2"/>'
+};
+const tabSVG = k => `<svg viewBox="0 0 24 24" width="19" height="19" fill="none"
+  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
+
+const tabsHTML = () => [
+  ['home','记账'],['list','流水'],['chart','统计'],['gear','设置']
+].map(([k,t],i) =>
+  `<div class="${i===0?'on':''}"><span class="ic">${tabSVG(k)}</span>${t}</div>`
+).join('');
+
+const screenHTML = (k) => `
+<div class="scr s-${k}">
+  <div class="top">
+    <span class="month">2026 年 11 月 ⌄</span>
+    ${k==='term' ? '<span class="live">LIVE</span>' : `<span class="month" style="opacity:.6">小账本</span>`}
+  </div>
+  <div class="hero">
+    <div class="lbl">本月支出</div>
+    <div class="amt">¥3,407.50</div>
+    <div class="sub"><span>收入 9,000.00</span><i>·</i><span>结余 5,592.50</span><i>·</i><span>6 笔</span></div>
+  </div>
+  <div class="ai"><span>说一句，或拍张账单截图</span><b>解析</b></div>
+  <div class="sec"><h3>最近流水</h3><a href="#">全部</a></div>
+  <ul class="rows">${rowsHTML}</ul>
+  <div class="tabs">${tabsHTML()}</div>
+</div>`;
+
+document.getElementById('grid').innerHTML = CASES.map(c => `
+  <article class="case">
+    <div class="info">
+      <div class="num">${c.num}</div>
+      <h2>${c.name}</h2>
+      <div class="en">${c.en}</div>
+      <ul>${c.points.map(p=>`<li>${p}</li>`).join('')}</ul>
+      <div class="cost">${c.cost}</div>
+    </div>
+    <div class="phone">${screenHTML(c.key)}</div>
+  </article>`).join('') + `
+  <div class="pick">
+    <div class="phead">
+      <h3>怎么选</h3>
+      <div class="sub">Pick one · I'll ship it</div>
+    </div>
+    <div class="sws">
+      <div class="sw"><span>01 墨韵</span><i style="background:#FBFAF7"></i><i style="background:#1A1A18"></i><i style="background:#B33A2B"></i><i style="background:#C9C3B4"></i></div>
+      <div class="sw"><span>02 幽光</span><i style="background:#0A0D13"></i><i style="background:#8B7BFF"></i><i style="background:#35E0C5"></i><i style="background:#FF7BA9"></i></div>
+      <div class="sw"><span>03 纸糖</span><i style="background:#FFF7EC"></i><i style="background:#17130F"></i><i style="background:#FFD84D"></i><i style="background:#8FD3FF"></i></div>
+      <div class="sw"><span>04 仪表</span><i style="background:#070B11"></i><i style="background:#3DF5A5"></i><i style="background:#FF8A3D"></i><i style="background:#1B2735"></i></div>
+      <div class="sw"><span>05 青瓷</span><i style="background:#F4F1E8"></i><i style="background:#6E8B6B"></i><i style="background:#C25B4A"></i><i style="background:#2C2A26"></i></div>
+    </div>
+    <dl>
+      <div><dt>耐看</dt><dd>01 · 每天打开不腻，信息最清楚</dd></div>
+      <div><dt>惊艳</dt><dd>02 · 打开就高级，低端机掉帧</dd></div>
+      <div><dt>轻松</dt><dd>03 · 像手账，记账没那么苦</dd></div>
+      <div><dt>专业</dt><dd>04 · 数字硬核，收支对比强</dd></div>
+      <div><dt>东方</dt><dd>05 · 宣纸釉色，慢生活调性</dd></div>
+    </dl>
+    <div class="note">也可以<b>混搭</b>：拿 01 的排版骨架配 04 的配色，或者 05 的配色套 02 的卡片质感，说一句我就拼给你看。</div>
+    <div class="go">这五套已经全部实装：打开 App → 设置 → 外观，点一下即换，会记住选择。连原来的绿色也在里面，随时能退回去。</div>
+  </div>`;
+
+// 让信息板顶部与手机框顶部对齐（对齐上方 info 块的高度）
+const alignPick = () => {
+  const first = document.querySelector('.case');
+  const info = first && first.querySelector('.info');
+  const pick = document.querySelector('.pick');
+  if (!first || !info || !pick) return;
+  const gap = parseFloat(getComputedStyle(first).rowGap) || 0;
+  pick.style.marginTop = (info.offsetHeight + gap) + 'px';
+};
+alignPick();
+addEventListener('resize', alignPick);
+</script>
+</body>
+</html>

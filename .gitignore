@@ -1,0 +1,35 @@
+# ---------- 依赖 ----------
+node_modules/
+
+# ---------- 构建产物（build.js / cap sync 生成，可随时重建）----------
+www/
+android/app/src/main/assets/public/
+android/build/
+android/app/build/
+android/.gradle/
+android/capacitor-cordova-android-plugins/
+
+# ---------- 本机环境（含本机绝对路径，绝不能提交）----------
+android/local.properties
+.env
+.env.*
+*.local
+
+# ---------- 打包归档与签名 ----------
+release/
+*.apk
+*.aab
+*.keystore
+*.jks
+*.p12
+
+# ---------- 开发期一次性调试脚本（含临时分享码、本机路径）----------
+_*.mjs
+diag.mjs
+
+# ---------- 编辑器与系统 ----------
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

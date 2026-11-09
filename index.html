@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="classic">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F6E56">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="小账本">
+<title>小账本</title>
+<script>
+/* 首屏防闪：真正取值在 IndexedDB 里，这里用 localStorage 的副本先垫上，
+   boot() 拿到设置后再校准一次。 */
+(function () {
+  try {
+    var t = localStorage.getItem('pl-theme');
+    if (t && /^(classic|ink|aurora|pop|term|cel)$/.test(t)) {
+      document.documentElement.dataset.theme = t;
+      var bg = { classic:'#0F6E56', ink:'#FBFAF7', aurora:'#0A0D13', pop:'#FFF7EC', term:'#070B11', cel:'#F4F1E8' };
+      var m = document.querySelector('meta[name="theme-color"]');
+      if (m && bg[t]) m.setAttribute('content', bg[t]);
+    }
+  } catch (e) {}
+})();
+</script>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <section id="view-home" class="view active">
+    <header class="hero">
+      <div class="hero-top">
+        <button class="month-btn" id="home-month-btn">
+          <span id="home-month">2026年10月</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+      <div class="hero-label" id="home-label">本月支出</div>
+      <div class="hero-amount" id="home-expense">¥0.00</div>
+      <div class="hero-meta">
+        <span>收入 <b id="home-income">¥0.00</b></span>
+        <span class="dot"></span>
+        <span>结余 <b id="home-balance">¥0.00</b></span>
+        <span class="dot"></span>
+        <span><b id="home-count">0</b> 笔</span>
+      </div>
+      <div class="hero-other" id="home-other" hidden></div>
+    </header>
+
+    <div class="ai-bar">
+      <div class="ai-input-wrap">
+        <svg class="ai-spark" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/>
+        </svg>
+        <input id="ai-input" type="text" inputmode="text" autocomplete="off"
+               placeholder="说一句，或拍张账单截图">
+        <button id="ai-photo" class="ai-photo" aria-label="上传账单图片">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="14" rx="3"/><circle cx="12" cy="12.5" r="3.2"/><path d="M8.5 5.5l1.2-2h4.6l1.2 2"/></svg>
+        </button>
+        <button id="ai-mic" class="ai-mic" hidden aria-label="语音输入">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>
+        </button>
+      </div>
+      <button id="ai-go" class="ai-go">发送</button>
+    </div>
+
+    <div class="bud-card" id="home-budget"></div>
+
+    <div class="recent-head">
+      <h2>最近流水</h2>
+      <button class="link-btn" data-jump="list">全部</button>
+    </div>
+    <div id="recent-list" class="tx-list"></div>
+    <div class="safe-bottom"></div>
+  </section>
+
+  <section id="view-list" class="view">
+    <header class="page-head">
+      <h1>流水</h1>
+      <span class="page-sub" id="list-total"></span>
+    </header>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="search" type="search" placeholder="搜索分类或备注" autocomplete="off">
+    </div>
+    <div id="list-months" class="month-chips"></div>
+    <div id="list-body"></div>
+    <div class="safe-bottom"></div>
+  </section>
+
+  <section id="view-stats" class="view">
+    <header class="page-head">
+      <h1>统计</h1>
+      <div class="month-nav">
+        <button class="mn-btn" id="stats-prev" aria-label="上个月">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <button class="mn-cur" id="stats-month">2026年11月</button>
+        <button class="mn-btn" id="stats-next" aria-label="下个月">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="card">
+      <div class="card-head"><h3>支出构成</h3><span class="hint" id="pie-hint"></span></div>
+      <div id="pie"></div>
+      <div id="pie-detail" class="pie-detail" hidden></div>
+      <p class="cur-note" id="pie-note" hidden></p>
+      <p class="cur-note" id="pie-tip">点扇区或图例，展开这个分类的明细</p>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>预算执行</h3><span class="hint" id="budget-head"></span></div>
+      <div id="budget-box"></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h3>AI 洞察</h3>
+        <button class="link-btn" id="insight-btn">生成</button>
+      </div>
+      <div id="insight-box" class="insight-box"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>固定扣款</h3><span class="hint" id="sub-hint"></span></div>
+      <div id="subs-box"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>近 12 个月</h3><span class="hint">按住左右滑</span></div>
+      <div id="bars"></div>
+      <p class="cur-note" id="bars-tip">按住图表左右滑动，看更早的月份</p>
+    </div>
+    <div class="safe-bottom"></div>
+  </section>
+
+  <section id="view-settings" class="view">
+    <header class="page-head"><h1>设置</h1></header>
+
+    <div class="card">
+      <div class="card-head"><h3>外观</h3><span class="hint" id="skin-hint"></span></div>
+      <div class="skin-grid" id="skin-grid"></div>
+      <p class="skin-note" id="skin-note">换肤只换皮，账目数据不动。选定后下次打开还是这款。<span class="skin-note-app">装成 App 后，桌面图标会跟着一起换。</span></p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>记账</h3><span class="hint" id="maincur-hint"></span></div>
+      <label class="field">
+        <span>主币种</span>
+        <select id="set-cur"></select>
+      </label>
+      <p class="note">首页和统计页的合计只算这个币种。其他币种的流水照常记录、照常显示自己的符号，但不会和主币种相加 —— 不同币种直接加在一起没有意义。小账本不做汇率换算，所以如果你的日常开销主要花美元，把这里换成美元即可。</p>
+    </div>
+
+    <div class="card" id="budget-set-card">
+      <div class="card-head"><h3>预算</h3><span class="hint" id="bud-hint"></span></div>
+      <label class="field">
+        <span>每月总预算</span>
+        <input id="bud-total" class="bud-input" type="number" inputmode="decimal"
+               step="0.01" min="0" placeholder="不限" autocomplete="off">
+      </label>
+      <div class="group-label">分类预算<span class="group-sub">留空 = 不限制</span></div>
+      <div id="bud-cats" class="bud-list"></div>
+      <p class="note">预算按月固定，不随月份变化；只对<b>主币种</b>生效，切换主币种后可以另设一套。首页会显示剩余额度和日均可用，统计页能看每个分类的超支情况。预算只做提醒，不影响记账。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>批量改币种</h3><span class="hint" id="cur-batch-hint"></span></div>
+      <label class="field">
+        <span>范围</span>
+        <select id="batch-scope"></select>
+      </label>
+      <label class="field">
+        <span>改成</span>
+        <select id="batch-cur"></select>
+      </label>
+      <label class="field" id="batch-main-row">
+        <span>主币种</span>
+        <div class="checkline">
+          <input type="checkbox" id="batch-main">
+          <em>同时切过去</em>
+        </div>
+      </label>
+      <div class="btn-row">
+        <button class="btn primary" id="batch-apply">批量修改</button>
+      </div>
+      <p class="note">只改币种标签，金额数字原样保留 —— 小账本不做汇率换算，所以这不是「折算成另一国货币」，而是把之前记错标签的账纠正过来。已经是对应币种的记录会自动跳过，反复点也不会改乱。改完之后相关月份的 AI 洞察会作废，需要重新生成。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>AI 解析</h3><span class="hint" id="ai-status">未配置</span></div>
+      <label class="field">
+        <span>服务商</span>
+        <select id="set-provider">
+          <option value="deepseek">DeepSeek</option>
+          <option value="gemini">Gemini（需能访问 Google）</option>
+          <option value="openrouter">OpenRouter</option>
+          <option value="siliconflow">硅基流动</option>
+          <option value="dashscope">通义千问</option>
+          <option value="custom">自定义（OpenAI 兼容）</option>
+        </select>
+      </label>
+      <label class="field ta">
+        <span>接口地址</span>
+        <textarea id="set-base" rows="1" placeholder="https://api.deepseek.com/v1" autocomplete="off" spellcheck="false"></textarea>
+      </label>
+      <label class="field">
+        <span>模型</span>
+        <input id="set-model" type="text" placeholder="deepseek-flash" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="field">
+        <span>API Key</span>
+        <input id="set-key" type="password" placeholder="sk-..." autocomplete="new-password" spellcheck="false">
+      </label>
+      <div class="btn-row">
+        <button class="btn" id="set-save">保存</button>
+        <button class="btn ghost" id="set-test">测试连接</button>
+      </div>
+      <p class="note" id="ai-note">Key 只存在这台设备的浏览器里，不会上传。请勿把本应用链接分享给他人使用同一个 Key。<br>Gemini 走的是 Google 官方 OpenAI 兼容层，同一个 Key 文字和识图都能用，但境内不能直连，需要把代理地址填进上面的「接口地址」。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>图片记账</h3><span class="hint" id="vision-status">未配置</span></div>
+      <label class="field">
+        <span>识图服务</span>
+        <select id="set-vprovider">
+          <option value="follow">跟随上方（推荐）</option>
+          <option value="deepseek">DeepSeek</option>
+          <option value="gemini">Gemini</option>
+          <option value="dashscope">通义千问</option>
+          <option value="siliconflow">硅基流动</option>
+          <option value="openrouter">OpenRouter</option>
+          <option value="custom">自定义</option>
+        </select>
+      </label>
+      <label class="field ta">
+        <span>接口地址</span>
+        <textarea id="set-vbase" rows="1" placeholder="留空则用上方地址" autocomplete="off" spellcheck="false"></textarea>
+      </label>
+      <label class="field">
+        <span>识图模型</span>
+        <input id="set-vmodel" type="text" placeholder="留空自动跟随，如 deepseek-flash" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="field">
+        <span>API Key</span>
+        <input id="set-vkey" type="password" placeholder="留空则用上方 Key" autocomplete="new-password" spellcheck="false">
+      </label>
+      <div class="btn-row">
+        <button class="btn" id="set-vsave">保存</button>
+        <button class="btn ghost" id="set-vtest">测试识图</button>
+      </div>
+      <p class="note">DeepSeek 的 <code>deepseek-flash</code> 已原生支持图片输入，用 DeepSeek 时这一块留空就行，识图和记账共用一个 Key。只有把文字记账放在不支持视觉的模型上时，才需要在这里单独指定 <code>qwen-vl-max</code> 之类的识图模型。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>数据</h3><span class="hint" id="data-count"></span></div>
+      <div class="btn-row">
+        <button class="btn ghost" id="export-btn">导出备份</button>
+        <button class="btn ghost" id="import-btn">导入备份</button>
+      </div>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+      <p class="note" id="backup-note">数据只存在本机。清理浏览器数据会丢失，建议每周导出一次。</p>
+      <div class="btn-row">
+        <button class="btn ghost" id="od-share-btn">分享备份文件</button>
+      </div>
+      <p class="note">用系统分享面板把刚才的备份文件直接发到 OneDrive、微信收藏等任意应用。网页浏览器不支持分享时会自动改为下载。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>OneDrive 云备份</h3><span class="hint" id="od-status">未连接</span></div>
+      <label class="field">
+        <span>Client ID</span>
+        <input id="od-client" type="text" placeholder="Azure 应用注册后生成的应用程序(客户端) ID" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="btn-row" id="od-btns-off">
+        <button class="btn" id="od-connect">连接 OneDrive</button>
+      </div>
+      <div class="btn-row" id="od-btns-on" hidden>
+        <button class="btn" id="od-backup">立即备份</button>
+        <button class="btn ghost" id="od-restore">恢复到本机</button>
+        <button class="btn ghost" id="od-disconnect">解除连接</button>
+      </div>
+      <label class="od-auto">
+        <input type="checkbox" id="od-auto">
+        <span>每天自动备份（打开 App 时静默上传）</span>
+      </label>
+      <p class="note" id="od-note"></p>
+      <p class="note" id="od-register">
+        备份存在你 OneDrive 的隐藏应用文件夹（Apps/小账本）里，App 只能访问这个文件夹，读不了网盘其它文件。
+        首次使用需花两分钟注册一个 Azure 应用：登录 <code>entra.microsoft.com</code> → 应用注册 → 新注册，名称随意；
+        支持的账户类型选「任何组织目录中的账户和个人 Microsoft 账户」；
+        平台选「单页应用程序(SPA)」，重定向 URI 填：<b id="od-redirect"></b>；
+        创建后把「应用程序(客户端) ID」粘贴到上面即可，不需要 Client Secret。
+      </p>
+    </div>
+
+    <div class="card" id="bd-card">
+      <div class="card-head"><h3>百度网盘备份</h3><span class="hint" id="bd-status"></span></div>
+      <p class="note" id="bd-web-note">百度接口不允许浏览器直连，此功能仅在 App 里可用。</p>
+      <div id="bd-body" hidden>
+        <label class="field">
+          <span>AppKey</span>
+          <input id="bd-appkey" type="text" placeholder="开放平台应用详情页的 AppKey" autocomplete="off" spellcheck="false">
+        </label>
+        <label class="field">
+          <span>SecretKey</span>
+          <input id="bd-secret" type="password" placeholder="应用详情页的 SecretKey" autocomplete="new-password" spellcheck="false">
+        </label>
+        <label class="field">
+          <span>应用名称</span>
+          <input id="bd-appname" type="text" placeholder="创建应用时填的产品名称，云端路径 /我的应用数据/{应用名}/" autocomplete="off" spellcheck="false">
+        </label>
+        <div class="btn-row" id="bd-btns-off">
+          <button class="btn ghost" id="bd-open-auth">打开授权页</button>
+          <button class="btn" id="bd-use-code">用授权码连接</button>
+        </div>
+        <label class="field" id="bd-code-row" hidden>
+          <span>授权码</span>
+          <input id="bd-code" type="text" placeholder="授权后百度会带回一串 code，粘贴到这里" autocomplete="off" spellcheck="false">
+        </label>
+        <div class="btn-row" id="bd-btns-on" hidden>
+          <button class="btn" id="bd-backup">立即备份</button>
+          <button class="btn ghost" id="bd-restore">恢复到本机</button>
+          <button class="btn ghost" id="bd-disconnect">解除连接</button>
+        </div>
+        <label class="od-auto">
+          <input type="checkbox" id="bd-auto">
+          <span>每天自动备份（打开 App 时静默上传）</span>
+        </label>
+        <p class="note" id="bd-note"></p>
+        <p class="note" id="bd-register">
+          需要先在 <code>pan.baidu.com/union</code> 实名认证（个人身份证，秒审）并创建应用，
+          拿到 AppKey 和 SecretKey；应用详情页 → 安全设置 → 配置授权回调地址：
+          <b id="bd-redirect"></b>（配置后约 1 小时生效）。
+          应用名称必须和创建应用时填的产品名完全一致，否则百度会拒绝路径。
+          备份存在网盘的「我的应用数据/{应用名}/backup.json」，同名自动覆盖。
+          注意：SecretKey 保存在本机、只用于自己换 token，别把它给别人。
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>分类</h3><span class="hint">点按可删除</span></div>
+      <div class="cat-editor">
+        <div class="cat-group">
+          <div class="cat-label">支出</div>
+          <div id="cat-expense" class="chips"></div>
+          <div class="add-cat">
+            <input id="new-cat-expense" type="text" placeholder="新增支出分类" maxlength="8">
+            <button class="mini-btn" data-addcat="expense">+</button>
+          </div>
+        </div>
+        <div class="cat-group">
+          <div class="cat-label">收入</div>
+          <div id="cat-income" class="chips"></div>
+          <div class="add-cat">
+            <input id="new-cat-income" type="text" placeholder="新增收入分类" maxlength="8">
+            <button class="mini-btn" data-addcat="income">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>分类习惯</h3><span class="hint">AI 会照着学</span></div>
+      <div id="rules-chips" class="chips"></div>
+      <p class="note" id="rules-note">你每次改动 AI 给的分类，这里就会多一条「商户 → 分类」。下次识别同样的商户直接套用。</p>
+    </div>
+
+    <p class="footnote">小账本 v2.11 · 本地优先 · 可选 OneDrive / 百度网盘云备份</p>
+    <div class="safe-bottom"></div>
+  </section>
+
+  <nav class="tabbar">
+    <button class="tab active" data-tab="home">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 10v10h14V10"/></svg>
+      <span>记账</span>
+    </button>
+    <button class="tab" data-tab="list">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      <span>流水</span>
+    </button>
+    <button class="tab" data-tab="stats">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      <span>统计</span>
+    </button>
+    <button class="tab" data-tab="settings">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1M18.7 18.7l-2.1-2.1M7.4 7.4L5.3 5.3"/></svg>
+      <span>设置</span>
+    </button>
+  </nav>
+
+  <button class="fab" id="fab-add" aria-label="手动记一笔">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+</div>
+
+<div id="sheet-mask" class="sheet-mask" hidden>
+  <div class="sheet" id="sheet">
+    <div class="sheet-grip"></div>
+    <div class="sheet-head">
+      <div class="seg" id="type-seg">
+        <button class="seg-item active" data-type="expense">支出</button>
+        <button class="seg-item" data-type="income">收入</button>
+        <button class="seg-item" data-type="transfer">转账</button>
+      </div>
+      <button class="sheet-close" id="sheet-close" aria-label="关闭">✕</button>
+    </div>
+
+    <div class="amount-row">
+      <select class="cur-pick" id="f-cur" aria-label="币种"></select>
+      <input id="f-amount" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off">
+    </div>
+
+    <div class="field-group">
+      <div class="group-label" id="cat-group-label">分类</div>
+      <div class="chips pick" id="f-cats"></div>
+    </div>
+
+    <div class="field-group">
+      <div class="group-label" id="acct-group-label">账户</div>
+      <div class="chips pick" id="f-accts"></div>
+    </div>
+
+    <div class="field-group">
+      <div class="group-label">日期</div>
+      <input id="f-date" type="date" class="date-input">
+    </div>
+
+    <div class="field-group">
+      <div class="group-label">备注</div>
+      <input id="f-note" type="text" class="note-input" placeholder="可选" maxlength="50" autocomplete="off">
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn ghost" id="f-delete" hidden>删除</button>
+      <button class="btn primary" id="f-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 月份选择：自绘面板。安卓 WebView 不支持 input[type=month]，
+     原生弹窗在真机上根本出不来，所以这里不用系统控件 -->
+<div id="mp-mask" class="sheet-mask" hidden>
+  <div class="sheet mp-sheet">
+    <div class="sheet-grip"></div>
+    <div class="mp-head">
+      <button class="mn-btn" id="mp-prev" aria-label="上一年">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <b id="mp-year">2026年</b>
+      <button class="mn-btn" id="mp-next" aria-label="下一年">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+      <button class="sheet-close" id="mp-close" aria-label="关闭">✕</button>
+    </div>
+    <div class="mp-grid" id="mp-grid"></div>
+    <p class="mp-foot" id="mp-foot">带小圆点的月份有流水</p>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<input type="file" id="photo-file" accept="image/*" multiple hidden>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
