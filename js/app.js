@@ -3,6 +3,12 @@ import * as AI from './ai.js';
 import * as OD from './onedrive.js';
 import * as BD from './baidu.js';
 import { donut, bars, palette } from './chart.js';
+import * as I18N from './i18n.js';
+
+/* 语言要在任何渲染之前定下来，否则首屏会先闪一下中文。
+   先读 localStorage 的副本（和皮肤同样的套路），boot 拿到 IndexedDB 后再校准。 */
+I18N.initLang(I18N.cachedLangPref());
+document.title = I18N.isEN() ? 'Pocket Ledger' : '小账本';
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
@@ -10,6 +16,8 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const WEEK_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MON_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /* ---------------- 皮肤 ----------------
    只影响外观：颜色/字体/圆角/底栏样式都挂在 <html data-theme> 上，
@@ -147,28 +155,37 @@ const CUR_CODES = CURRENCIES.map(c => c.code);
 /* 老数据没有 cur 字段，一律当人民币；其他未知代码也回落人民币 */
 const curOf = t => (t && CUR[t.cur]) ? t.cur : 'CNY';
 const symOf = code => (CUR[code] || CUR.CNY).sym;
-const nameOf = code => (CUR[code] || CUR.CNY).name;
+const nameOf = code => {
+  const c = (CUR[code] || CUR.CNY);
+  return I18N.isEN() ? I18N.translate(c.name) : c.name;
+};
 const money = (c, code = 'CNY') => symOf(code) + yuan(c);
 const mainCur = () => (state.settings.mainCur && CUR[state.settings.mainCur]) ? state.settings.mainCur : 'CNY';
 
 function monthLabel(mk) {
   const [y, m] = mk.split('-');
-  return `${y}年${Number(m)}月`;
+  return I18N.isEN() ? `${MON_EN[Number(m) - 1]} ${y}` : `${y}年${Number(m)}月`;
 }
 
 function dayLabel(ds) {
-  const t = todayStr();
-  if (ds === t) return '今天';
+  const t0 = todayStr();
+  if (ds === t0) return I18N.t('今天');
   const y = new Date(); y.setDate(y.getDate() - 1);
-  if (ds === todayStr(y)) return '昨天';
+  if (ds === todayStr(y)) return I18N.t('昨天');
   const d = new Date(ds + 'T00:00:00');
+  if (I18N.isEN()) return `${WEEK_EN[d.getDay()]}, ${MON_EN[d.getMonth()]} ${d.getDate()}`;
   return `${d.getMonth() + 1}月${d.getDate()}日 ${WEEK[d.getDay()]}`;
 }
 
 function catInitial(name) {
-  if (!name) return '记';
-  return name.slice(0, 1);
+  if (!name) return I18N.isEN() ? 'N' : '记';
+  const shown = I18N.isEN() ? I18N.translate(name) : name;
+  return shown.slice(0, 1).toUpperCase();
 }
+
+/* 展示用的分类/账户名：库里存的永远是中文，只有内置词汇有英文对照，
+   用户自己起的名字查不到就原样显示，不会被乱翻。 */
+const showName = s => (I18N.isEN() ? I18N.translate(s || '') : (s || ''));
 
 let toastTimer = null;
 function toast(msg, isErr = false) {
@@ -311,7 +328,7 @@ function renderMonthPanel() {
   const maxMk = nowMonth();
   const nowYear = +maxMk.slice(0, 4);
   const has = new Set(state.txs.map(t => monthOf(t.date)));
-  $('#mp-year').textContent = `${mpYear}年`;
+  $('#mp-year').textContent = I18N.isEN() ? String(mpYear) : `${mpYear}年`;
   $('#mp-next').disabled = mpYear >= nowYear;   // 不许翻到未来
   $('#mp-prev').disabled = mpYear <= 2000;
   let html = '';
@@ -322,7 +339,7 @@ function renderMonthPanel() {
     if (mk === mpCur) cls.push('on');
     if (future) cls.push('dis');
     if (has.has(mk)) cls.push('has');
-    html += `<button class="${cls.join(' ')}" data-mk="${mk}"${future ? ' disabled' : ''}>${m}月</button>`;
+    html += `<button class="${cls.join(' ')}" data-mk="${mk}"${future ? ' disabled' : ''}>${I18N.isEN() ? MON_EN[m - 1] : `${m}月`}</button>`;
   }
   $('#mp-grid').innerHTML = html;
 }
@@ -431,7 +448,7 @@ function renderBudgetHome() {
   const over = st.rest < 0;
   const pctText = Math.round(st.pct * 100);
   const detail = st.cats.filter(c => c.spent > c.limit).slice(0, 3)
-    .map(c => `${c.name}超 ${money(c.spent - c.limit, mc)}`).join(' · ');
+    .map(c => `${showName(c.name)}超 ${money(c.spent - c.limit, mc)}`).join(' · ');
 
   const right = over
     ? `已用 <b class="num">${pctText}%</b>`
@@ -644,7 +661,7 @@ function renderBatchPanel() {
   const mc = mainCur();
   const prevTarget = curSel.value;
   curSel.innerHTML = CURRENCIES.map(c =>
-    `<option value="${c.code}">${esc(c.name)} ${esc(c.sym)}</option>`).join('');
+    `<option value="${c.code}">${esc(showName(c.name))} ${esc(c.sym)}</option>`).join('');
 
   let target = prevTarget;
   if (!target || !CUR[target]) {
@@ -708,7 +725,7 @@ async function applyBatchCur() {
   if (!will.length) return;
 
   const scopeText = scope === 'all' ? '全部记录' : monthLabel(scope);
-  const ok = confirm(`把${scopeText}里的 ${will.length} 笔改成${nameOf(target)}？\n\n只改币种标签，金额数字不变（小账本不做汇率换算）。`);
+  const ok = confirm(I18N.translate(`把${scopeText}里的 ${will.length} 笔改成${nameOf(target)}？\n\n只改币种标签，金额数字不变（小账本不做汇率换算）。`));
   if (!ok) return;
 
   const btn = $('#batch-apply');
@@ -749,14 +766,14 @@ function txRowHTML(t) {
   const cls = t.type === 'expense' ? 'exp' : t.type === 'income' ? 'inc' : 'trf';
   const sign = t.type === 'expense' ? '-' : t.type === 'income' ? '+' : '';
   const subParts = [];
-  if (t.type === 'transfer') subParts.push(`${t.acct} → ${t.toAcct}`);
-  else subParts.push(t.acct);
+  if (t.type === 'transfer') subParts.push(`${showName(t.acct)} → ${showName(t.toAcct)}`);
+  else subParts.push(showName(t.acct));
   if (t.note) subParts.push(t.note);
   return `<div class="tx-item" data-id="${t.id}">
     <div class="tx-icon ${cls}">${esc(catInitial(t.cat))}</div>
     <div class="tx-main">
-      <div class="tx-cat">${esc(t.cat)}${t.src === 'ai' ? '<span class="badge-ai">AI</span>' : ''}</div>
-      <div class="tx-sub">${esc(subParts.join(' · '))}</div>
+      <div class="tx-cat">${esc(showName(t.cat))}${t.src === 'ai' ? '<span class="badge-ai">AI</span>' : ''}</div>
+      <div class="tx-sub" data-no-i18n>${esc(subParts.join(' · '))}</div>
     </div>
     <div class="tx-amt ${cls}">${sign}${symOf(curOf(t))}${yuan(t.cents)}</div>
   </div>`;
@@ -798,6 +815,9 @@ function renderHome() {
 /* 胶囊上的月份写法：今年的省掉年份，往年的带上两位年份 */
 function shortMonth(mk) {
   const y = mk.slice(0, 4), m = +mk.slice(5, 7);
+  if (I18N.isEN()) {
+    return y === String(new Date().getFullYear()) ? MON_EN[m - 1] : `${MON_EN[m - 1]} '${y.slice(2)}`;
+  }
   return y === String(new Date().getFullYear()) ? `${m}月` : `${y.slice(2)}年${m}月`;
 }
 
@@ -823,7 +843,9 @@ function renderList() {
     list = list.filter(t =>
       (t.note || '').toLowerCase().includes(q) ||
       (t.cat || '').toLowerCase().includes(q) ||
-      (t.acct || '').toLowerCase().includes(q)
+      (t.acct || '').toLowerCase().includes(q) ||
+      /* 英文界面下顺手认一下英文分类名（显示是英文，存的还是中文） */
+      I18N.translate(t.cat || '').toLowerCase().includes(q)
     );
   }
   const scope = state.listMonth ? monthLabel(state.listMonth) + ' · ' : '';
@@ -906,7 +928,7 @@ function renderStats() {
     const sum = monthTxs(mk)
       .filter(t => t.type === 'expense' && curOf(t) === mc)
       .reduce((s, t) => s + t.cents, 0);
-    months.push({ label: `${d.getMonth() + 1}月`, value: sum, mk, text: sum ? money(sum, mc) : '' });
+    months.push({ label: I18N.isEN() ? MON_EN[d.getMonth()] : `${d.getMonth() + 1}月`, value: sum, mk, text: sum ? money(sum, mc) : '' });
   }
   $('#bars').innerHTML = bars(months, state.month);
   mountBars();
@@ -1100,10 +1122,48 @@ function renderBaidu() {
   }
 }
 
+/* ---------------- 语言 ---------------- */
+
+const LANG_OPTS = [
+  { k: 'auto', zh: '跟随系统', en: 'System' },
+  { k: 'zh', zh: '中文', en: '中文' },
+  { k: 'en', zh: 'English', en: 'English' }
+];
+
+function renderLangPicker() {
+  const box = $('#lang-grid');
+  if (!box) return;
+  const p = I18N.langPref();
+  box.innerHTML = LANG_OPTS.map(o => `
+    <button type="button" class="lang-card${o.k === p ? ' on' : ''}" data-lang="${o.k}"
+            aria-pressed="${o.k === p}">
+      <span class="lang-name">${I18N.isEN() ? o.en : o.zh}</span>
+      <span class="lang-tick">✓</span>
+    </button>`).join('');
+  const hint = $('#lang-hint');
+  if (hint) hint.textContent = p === 'auto'
+    ? (I18N.detectLang() === 'zh' ? '中文' : 'English')
+    : (p === 'zh' ? '中文' : 'English');
+}
+
+async function setUiLang(p) {
+  if (!I18N.LANGS.includes(p) || p === I18N.langPref()) return;
+  I18N.setLang(p);
+  state.settings.lang = p;
+  await DB.setSetting('lang', p);
+  document.title = I18N.isEN() ? 'Pocket Ledger' : '小账本';
+  I18N.refresh();
+  fillCurSelects(true);
+  renderLangPicker();
+  switchTab(state.tab);   // 整页重渲染：日期、月份、币种名才会换成新语言
+  toast(p === 'en' ? 'Language: English' : (p === 'zh' ? '界面语言：中文' : '语言跟随系统'));
+}
+
 function renderSettings() {
   const s = state.settings;
   const mc = mainCur();
   renderSkinPicker();
+  renderLangPicker();
   renderBudgetSettings();
   const curSel = $('#set-cur');
   if (curSel) curSel.value = mc;
@@ -1154,7 +1214,7 @@ function renderSettings() {
   const rk = Object.keys(state.rules || {});
   $('#rules-chips').innerHTML = rk.length
     ? rk.sort().map(k =>
-        `<span class="chip del" data-delrule="${esc(k)}">${esc(k)} → ${esc(state.rules[k])}</span>`
+        `<span class="chip del" data-delrule="${esc(k)}"><span data-no-i18n>${esc(k)}</span> → ${esc(showName(state.rules[k]))}</span>`
       ).join('')
     : '<span class="hint">还没有学习记录，改一次 AI 给的分类就会记下一条</span>';
 }
@@ -2018,7 +2078,7 @@ async function importData(file) {
 async function applyImportPayload(payload) {
   const rows = payload.transactions || payload.tx || [];
   if (!Array.isArray(rows) || !rows.length) { toast('这个文件里没有流水数据', true); return; }
-  if (!confirm(`导入 ${rows.length} 笔记录？相同 ID 的记录会被覆盖，不会重复。`)) {
+  if (!confirm(I18N.translate(`导入 ${rows.length} 笔记录？相同 ID 的记录会被覆盖，不会重复。`))) {
     throw { cancelled: true };
   }
 
@@ -2054,6 +2114,14 @@ function bindEvents() {
     skinGrid.addEventListener('click', e => {
       const card = e.target.closest('[data-skin]');
       if (card) pickSkin(card.dataset.skin);
+    });
+  }
+  // 语言：同样走委托
+  const langGrid = $('#lang-grid');
+  if (langGrid) {
+    langGrid.addEventListener('click', e => {
+      const card = e.target.closest('[data-lang]');
+      if (card) setUiLang(card.dataset.lang);
     });
   }
   $$('[data-jump]').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.jump)));
@@ -2260,7 +2328,7 @@ function bindEvents() {
   $('#f-save').addEventListener('click', saveForm);
   $('#f-delete').addEventListener('click', async () => {
     if (!state.editing?.id) return;
-    if (!confirm('删除这一笔？')) return;
+    if (!confirm(I18N.translate('删除这一笔？'))) return;
     await DB.delTx(state.editing.id);
     closeSheet();
     await reloadTx();
@@ -2495,7 +2563,7 @@ function bindEvents() {
     }
   });
   $('#od-disconnect').addEventListener('click', async () => {
-    if (!confirm('解除连接？只清掉本机的登录凭证和云端备份的访问授权，云端备份文件本身保留。')) return;
+    if (!confirm(I18N.translate('解除连接？只清掉本机的登录凭证和云端备份的访问授权，云端备份文件本身保留。'))) return;
     await OD.disconnect();
     renderSettings();
     toast('已解除连接');
@@ -2563,7 +2631,7 @@ function bindEvents() {
     }
   });
   $('#bd-disconnect').addEventListener('click', async () => {
-    if (!confirm('解除连接？只清掉本机保存的登录凭证，网盘里的备份文件保留。')) return;
+    if (!confirm(I18N.translate('解除连接？只清掉本机保存的登录凭证，网盘里的备份文件保留。'))) return;
     await BD.disconnect();
     renderSettings();
     toast('已解除连接');
@@ -2584,7 +2652,7 @@ function bindEvents() {
     const del = e.target.closest('[data-delcat]');
     if (del) {
       const name = del.textContent.trim();
-      if (!confirm(`删除分类「${name}」？已记录的流水不受影响。`)) return;
+      if (!confirm(I18N.translate(`删除分类「${name}」？已记录的流水不受影响。`))) return;
       await DB.delCat(del.dataset.delcat);
       await loadAll();
       renderSettings();
@@ -2616,17 +2684,31 @@ async function saveBdConfig() {
 /* ---------------- boot ---------------- */
 
 /* 币种下拉：弹层里只放符号（省地方），设置页放「US$ 美元」全称 */
-function fillCurSelects() {
+function fillCurSelects(force) {
   const shortOpts = CURRENCIES.map(c => `<option value="${c.code}">${c.sym}</option>`).join('');
-  const fullOpts = CURRENCIES.map(c => `<option value="${c.code}">${c.sym} ${c.name}</option>`).join('');
+  const fullOpts = CURRENCIES.map(c =>
+    `<option value="${c.code}">${c.sym} ${I18N.isEN() ? I18N.translate(c.name) : c.name}</option>`).join('');
   const f = $('#f-cur');
-  if (f && !f.options.length) f.innerHTML = shortOpts;
+  if (f && (force || !f.options.length)) {
+    const keep = f.value;
+    f.innerHTML = shortOpts;
+    if (keep) f.value = keep;
+  }
   const s = $('#set-cur');
-  if (s && !s.options.length) s.innerHTML = fullOpts;
+  if (s && (force || !s.options.length)) {
+    const keep = s.value;
+    s.innerHTML = fullOpts;
+    if (keep) s.value = keep;
+  }
 }
 
 async function boot() {
   await loadAll();
+  /* 语言三级优先：用户在设置里的选择 → localStorage 副本 → 系统语言。
+     放在任何 render 之前，首屏就是最终语言。 */
+  I18N.initLang(state.settings.lang || I18N.cachedLangPref());
+  document.title = I18N.isEN() ? 'Pocket Ledger' : '小账本';
+  I18N.refresh();
   applyTheme(state.settings.theme || 'classic');
   // 网页版没有原生桥，只有 APK 里才会真的换桌面图标。
   // 桥注入偶尔慢半拍，补一次（原生侧状态没变会直接返回，不会闪）。

@@ -1107,3 +1107,27 @@ html[data-theme="cel"] .chip{background:var(--card);border:1px solid var(--line)
 html[data-theme="cel"] .chip.on{background:var(--brand);color:var(--on-brand)}
 html[data-theme="cel"] .btn{border:1px solid var(--line-strong);background:var(--card);color:var(--brand-deep)}
 html[data-theme="cel"] .btn.primary{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+
+/* ---------------- 语言选择 ----------------
+   三颗并列胶囊，和皮肤卡同一套观感但更轻：语言是开关，不需要缩略图。
+   英文比中文长，所以用 min-width:0 + 省略规则兜住，不同皮肤都不破版。 */
+.lang-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.lang-card{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  min-height:44px;padding:8px 6px;border-radius:12px;background:var(--surface);
+  border:1.5px solid transparent;transition:border-color .15s,transform .12s;
+  min-width:0;
+}
+.lang-card:active{transform:scale(.97)}
+.lang-card.on{border-color:var(--brand)}
+.lang-name{
+  font-size:13px;line-height:1.2;color:var(--text);letter-spacing:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+}
+.lang-card.on .lang-name{color:var(--brand-deep);font-weight:600}
+html[data-theme="ink"] .lang-card,html[data-theme="cel"] .lang-card{background:var(--card)}
+.lang-tick{
+  position:absolute;top:4px;right:6px;font-size:10px;line-height:1;
+  color:var(--brand);opacity:0;transition:opacity .15s;
+}
+.lang-card.on .lang-tick{opacity:1}
