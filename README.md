@@ -82,6 +82,19 @@
 |---|---|---|
 | ![首页](docs/screenshots/home.webp) | ![统计](docs/screenshots/stats.webp) | ![流水](docs/screenshots/list.webp) |
 
+## 下载
+
+| 渠道 | 地址 | 适合 |
+|---|---|---|
+| 落地页（推荐） | https://pocket-ledger-apk.app.workbuddy.host/?sharecode=QASKTFVBJT | 国内访问快。安卓下 APK、iPhone 直接用网页版，中英介绍页一并提供 |
+| GitHub Releases | [Latest release](https://github.com/mo0981/pocket-ledger/releases/latest) | 海外用户、只要 APK 直链，或落地页打不开时备用 |
+
+两个渠道放的是**同一个包**：`xiaozhangben-v2.18.apk`，4,960,498 字节，MD5 `8bcbdbf9fc183edb9e5d60402e9cf507`。
+
+iPhone 不用装包：打开落地页 →「不装包，直接用网页版」→ Safari 分享 → 添加到主屏幕。
+
+> 安装包是 debug 签名的自用版本，没有上架应用商店。
+
 ## 快速开始
 
 ### 网页版
