@@ -1,6 +1,6 @@
 {
   "name": "pocket-ledger",
-  "version": "2.18.0",
+  "version": "2.19.0",
   "description": "小账本 - 本地优先的记账应用：一句话/一张图由 AI 拆成账目，六套皮肤，预算与统计",
   "private": true,
   "scripts": {

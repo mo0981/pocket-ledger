@@ -61,7 +61,8 @@
 ### 皮肤
 
 - 六套完整皮肤，不是换个背景色：字体、圆角、阴影、描边、底栏图标线条、图表调色板全部跟着换
-- 安卓 APK 里桌面图标也一起换（`activity-alias` 机制）
+- 安卓 APK 里桌面图标也一起换（`activity-alias` 机制）；图标按 Android 自适应图标规范拆成纯色底 + 透明前景层，圆形/方形遮罩下都完整
+- 重新生成图标：`node tools/gen-icons.mjs`（同时产出 PWA 与 iOS 主屏图标）
 - 深色皮肤下系统控件（下拉框、日期选择器）一并变暗
 
 ### 双语
@@ -82,6 +83,12 @@
 |---|---|---|
 | ![首页](docs/screenshots/home.webp) | ![统计](docs/screenshots/stats.webp) | ![流水](docs/screenshots/list.webp) |
 
+### 桌面图标
+
+六套皮肤各有自己的启动器图标：同心徽章环 + 中央 ¥ 的统一骨架，靠笔锋与材质区分性格，无多余装饰点。
+
+![六套皮肤启动器图标](docs/screenshots/icons.webp)
+
 ## 下载
 
 | 渠道 | 地址 | 适合 |
@@ -89,7 +96,7 @@
 | 落地页（推荐） | https://pocket-ledger-apk.app.workbuddy.host/?sharecode=QASKTFVBJT | 国内访问快。安卓下 APK、iPhone 直接用网页版，中英介绍页一并提供 |
 | GitHub Releases | [Latest release](https://github.com/mo0981/pocket-ledger/releases/latest) | 海外用户、只要 APK 直链，或落地页打不开时备用 |
 
-两个渠道放的是**同一个包**：`xiaozhangben-v2.18.apk`，4,960,498 字节，MD5 `8bcbdbf9fc183edb9e5d60402e9cf507`。
+两个渠道放的是**同一个包**：`xiaozhangben-v2.19.apk`，4,764,099 字节，MD5 `5427f5a72f99038ca53062daa8504ead`。
 
 iPhone 不用装包：打开落地页 →「不装包，直接用网页版」→ Safari 分享 → 添加到主屏幕。
 
@@ -167,7 +174,7 @@ js/
 build.js              把源文件拷进 www/
 serve.js              本地静态服务
 release.js            归档 APK、算 MD5、清理旧版本
-tools/gen-icons.mjs   由 SVG 生成六套图标（90 张 PNG + adaptive XML）
+tools/gen-icons.mjs   由 SVG 生成六套图标（94 张 PNG：5 密度 × 6 皮肤 × 3 类 + 4 张 PWA，另含 adaptive XML）
 design-lab.html       六套皮肤的对比展厅
 
 android/              Capacitor 工程

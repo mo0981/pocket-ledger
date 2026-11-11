@@ -424,8 +424,8 @@ const EN = {
   '币种': 'Currency',
   '支出构成环形图，点扇区可查看明细': 'Spending donut chart, tap a slice for details',
   '近 12 个月支出趋势，可左右滑动查看': 'Spending over the last 12 months, swipe to scroll',
-  '小账本 v2.18 · 本地优先 · 可选 OneDrive / 百度网盘云备份':
-    'Pocket Ledger v2.18 · local-first · optional OneDrive / Baidu Netdisk backup',
+  '小账本 v2.19 · 本地优先 · 可选 OneDrive / 百度网盘云备份':
+    'Pocket Ledger v2.19 · local-first · optional OneDrive / Baidu Netdisk backup',
   '只改币种标签，金额数字原样保留 —— 小账本不做汇率换算，所以这不是「折算成另一国货币」，而是把之前记错标签的账纠正过来。已经是对应币种的记录会自动跳过，反复点也不会改乱。改完之后相关月份的 AI 洞察会作废，需要重新生成。':
     'Only the label changes — amounts stay exactly as recorded. There is no FX conversion here, so this is not "converting to another currency", it just fixes entries that were tagged wrong. Rows already in the target currency are skipped, so clicking twice is safe. AI insights for the affected months are cleared and need regenerating.',
 
